@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="theme-color" content="#fff5fa">
+
+<title>LUMIA - Mon espace étudiant</title>
+
+<style>
+
+*{box-sizing:border-box}
+
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#fff8fc;color:#393447}
+
+header{padding:28px 22px;background:linear-gradient(135deg,#f8ddeb,#e5e8ff);border-radius:0 0 28px 28px}
+
+header h1{font-size:34px;margin:0;color:#765b83}
+
+header p{margin:7px 0 0;color:#665b70}
+
+nav{display:flex;gap:8px;padding:14px;overflow:auto}
+
+nav button,.action{border:0;border-radius:14px;padding:11px 15px;background:#eeeafa;color:#66577a;font-weight:600}
+
+nav button.active,.action{background:#d9c9ed;color:#49375e}
+
+main{padding:8px 18px 35px;max-width:700px;margin:auto}
+
+h2{font-size:22px;margin:18px 0 12px}
+
+.card{background:white;border:1px solid #f0e5ef;border-radius:20px;padding:17px;margin:12px 0;box-shadow:0 4px 16px #7d58700c}
+
+.big{font-size:27px;font-weight:700;color:#866b9d}
+
+input,select{width:100%;padding:13px;border:1px solid #e7dce9;border-radius:12px;margin:6px 0 12px;background:#fffafd;font-size:16px;color:#393447}
+
+button{cursor:pointer}
+
+.task{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #f2eaf1}
+
+.task:last-child{border:0}
+
+.task input{width:20px;margin:0}
+
+.done{text-decoration:line-through;color:#aaa}
+
+.small{color:#82788a;font-size:13px}
+
+.hidden{display:none}
+
+.progress{height:10px;background:#f0eaf4;border-radius:10px;overflow:hidden}
+
+.progress span{display:block;height:100%;background:#c6a9df;width:0}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h1>✿ LUMIA</h1>
+
+<p>Ton temps. Tes objectifs. Ta réussite.</p>
+
+<p id="today"></p>
+
+</header>
+
+<nav>
+
+<button class="active" onclick="show('home',this)">Accueil</button>
+
+<button onclick="show('planning',this)">Planning</button>
+
+<button onclick="show('revision',this)">Révisions</button>
+
+<button onclick="show('stats',this)">Statistiques</button>
+
+</nav>
+
+<main>
+
+<section id="home">
+
+<div class="card">
+
+<p class="small">BIENVENUE DANS TON ESPACE</p>
+<h2>Tu vas y arriver ! 💗</h2>
+
+<p>Chaque petite séance te rapproche de tes objectifs.</p>
+
+</div>
+
+<div class="card">
+
+<p class="small">TES TÂCHES TERMINÉES</p>
+
+<div class="big" id="count">0 / 0</div>
+
+<div class="progress"><span id="bar"></span></div>
+
+</div>
+
+<h2>À faire aujourd'hui</h2>
+
+<div class="card" id="todayTasks"></div>
+
+</section>
+
+<section id="planning" class="hidden">
+
+<h2>Mon planning 🌷</h2>
+
+<div class="card">
+
+<label>Nom du cours ou de la séance</label>
+
+<input id="eventName" placeholder="Ex : Cours de droit">
+
+<label>Date</label>
+
+<input id="eventDate" type="date">
+
+<label>Heure</label>
+
+<input id="eventTime" type="time">
+
+<button class="action" onclick="addEvent()">Ajouter au planning</button>
+
+</div>
+
+<div class="card" id="events"></div>
+
+</section>
+
+<section id="revision" class="hidden">
+
+<h2>Mes révisions 📚</h2>
+
+<div class="card">
+
+<label>Matière</label>
+
+<input id="subject" placeholder="Ex : Psychologie">
+
+<label>Ce que je dois réviser</label>
+
+<input id="taskName" placeholder="Ex : Chapitre 2">
+
+<label>Date limite</label>
+
+<input id="deadline" type="date">
+
+<button class="action" onclick="addTask()">Ajouter une révision</button>
+
+</div>
+
+<div class="card" id="tasks"></div>
+
+</section>
+
+<section id="stats" class="hidden">
+
+<h2>Ma progression ✨</h2>
+
+<div class="card">
+
+<p class="small">RÉVISIONS TERMINÉES</p>
+
+<div class="big" id="statDone">0</div>
+
+<p class="small">TÂCHES RESTANTES</p>
+
+<div class="big" id="statLeft">0</div>
+
+</div>
+
+</section>
+
+</main>
+
+<script>
+
+let tasks=JSON.parse(localStorage.getItem('lumiaTasks')||'[]');
+
+let events=JSON.parse(localStorage.getItem('lumiaEvents')||'[]');
+
+const today=new Date().toISOString().slice(0,10);
+
+document.getElementById('today').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+
+function save(){localStorage.setItem('lumiaTasks',JSON.stringify(tasks));localStorage.setItem('lumiaEvents',JSON.stringify(events));render()}
+
+function show(id,btn){
+
+document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));
+
+document.getElementById(id).classList.remove('hidden');
+
+document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+
+btn.classList.add('active');render();
+
+}
+
+function addTask(){
+
+let subject=document.getElementById('subject').value.trim();
+
+let name=document.getElementById('taskName').value.trim();
+
+if(!subject||!name){alert('Remplis la matière et la révision.');return}
+
+tasks.push({subject,name,deadline:document.getElementById('deadline').value,done:false});
+
+document.getElementById('subject').value='';
+
+document.getElementById('taskName').value='';
+
+save();
+
+}
+
+function addEvent(){
+
+let name=document.getElementById('eventName').value.trim();
+
+let date=document.getElementById('eventDate').value;
+
+let time=document.getElementById('eventTime').value;
+
+if(!name||!date){alert('Indique le nom et la date.');return}
+
+events.push({name,date,time});save();
+
+document.getElementById('eventName').value='';
+
+}
+
+function toggleTask(i){tasks[i].done=!tasks[i].done;save()}
+
+function render(){
+
+let done=tasks.filter(t=>t.done).length;
+
+document.getElementById('count').textContent=done+' / '+tasks.length;
+
+document.getElementById('bar').style.width=(tasks.length?done/tasks.length*100:0)+'%';
+
+document.getElementById('statDone').textContent=done;
+
+document.getElementById('statLeft').textContent=tasks.length-done;
+
+document.getElementById('tasks').innerHTML=tasks.length?tasks.map((t,i)=>`<div class="task"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${i})"><div><strong class="${t.done?'done':''}">${escapeHTML(t.name)}</strong><div class="small">${escapeHTML(t.subject)} · ${t.deadline||'Sans échéance'}</div></div></div>`).join(''):'Aucune révision pour le moment.';
+
+document.getElementById('todayTasks').innerHTML=tasks.filter(t=>!t.done).slice(0,5).map(t=>`<div class="task">📖 <div>${escapeHTML(t.name)}<div class="small">${escapeHTML(t.subject)}</div></div></div>`).join('')||'Rien à faire pour le moment. Profite de ton temps libre ! 🌸';
+
+document.getElementById('events').innerHTML=events.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(e=>`<div class="task">🗓️ <div><strong>${escapeHTML(e.name)}</strong><div class="small">${e.date} ${e.time||''}</div></div></div>`).join('')||'Ton planning est vide.';
+
+}
+
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}render();
+
+</script>
+
+</body>
+
+</html>
